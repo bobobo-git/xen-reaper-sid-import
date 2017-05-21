@@ -29,7 +29,7 @@ public:
 
 	void timerCallback(int id) override;
 
-	// Inherited via PCM_source
+	// Lots of methods to override when subclassing PCM_source...
 	PCM_source * Duplicate() override;
 
 	bool IsAvailable() override;
@@ -66,8 +66,8 @@ public:
 
 	int Extended(int call, void *parm1, void *parm2, void *parm3) override;
 
-	MD5 getStateHash();
 private:
+	MD5 getStateHash();
 	void renderSID();
 	void renderSIDintoMultichannel(String outfn, String outdir);
 	void adjustParentTrackChannelCount();

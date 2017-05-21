@@ -149,6 +149,8 @@ double SID_PCM_Source::GetLength()
 int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 {
 	juce::AlertWindow aw("SID source properties",m_sidfn,AlertWindow::InfoIcon);
+	LookAndFeel_V3 lookandfeel;
+	aw.setLookAndFeel(&lookandfeel);
 	StringArray items;
 	items.add("Default track");
 	for (int i = 1; i < 21; ++i)
@@ -177,6 +179,7 @@ int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 	aw.addTextEditor("tracklen", String(m_sidlen, 1), "Length to use");
 	aw.addButton("OK and use as defaults", 2);
 	aw.addButton("OK", 1);
+	aw.setSize(aw.getWidth() + 200, aw.getHeight());
 	int r = aw.runModalLoop();
 	if (r == 1 || r == 2)
 	{
