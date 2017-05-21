@@ -82,5 +82,7 @@ private:
 	int m_sid_channelmode = 0;
 	int m_sid_sr = 44100;
 	MediaItem* m_item = nullptr;
+	double m_percent_ready = 0.0;
+	ProgressBar m_progbar;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SID_PCM_Source)
 };

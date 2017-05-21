@@ -2,13 +2,12 @@
 #include "lineparse.h"
 #include <array>
 
-SID_PCM_Source::SID_PCM_Source()
+SID_PCM_Source::SID_PCM_Source() : m_progbar(m_percent_ready)
 {
 	if (HasExtState("sid_import", "default_len"))
 		m_sidlen = jlimit(1.0, 600.0, atof(GetExtState("sid_import", "default_len")));
 	if (HasExtState("sid_import", "default_sr"))
 		m_sid_sr = jlimit(8000.0, 384000.0, atof(GetExtState("sid_import", "default_sr")));
-	
 }
 
 SID_PCM_Source::~SID_PCM_Source()
@@ -27,6 +26,7 @@ void SID_PCM_Source::timerCallback(int id)
 	{
 		if (m_childproc.isRunning() == false)
 		{
+			m_progbar.removeFromDesktop();
 			stopTimer(1);
 			if (m_childproc.getExitCode() == 0)
 			{
@@ -45,6 +45,14 @@ void SID_PCM_Source::timerCallback(int id)
 				String temp = m_childproc.readAllProcessOutput();
 				AlertWindow::showMessageBox(AlertWindow::WarningIcon, "SID import error", temp);
 			}
+		}
+		else
+		{
+			File temp(m_sidoutfn);
+			double percent = 1.0 / (m_sidlen*m_sid_sr * 2)*temp.getSize();
+			m_percent_ready = percent;
+			//String msg = String(percent, 1) + "% ready...\n";
+			//ShowConsoleMsg(msg.toRawUTF8());
 		}
 	}
 }
@@ -272,9 +280,8 @@ void SID_PCM_Source::renderSID()
 	if (m_sidfn.isEmpty() == true)
 		return;
 	auto hash = getStateHash();
-	char buf[2048];
-	GetProjectPath(buf, 2048);
-	String outfolder = String(CharPointer_UTF8(buf)) + "/sid_cache";
+	const char* rscpath = GetResourcePath();
+	String outfolder = String(CharPointer_UTF8(rscpath)) + "/UserPlugins/sid_cache";
 	File diskfolder(outfolder);
 	if (diskfolder.exists() == false)
 	{
@@ -302,6 +309,7 @@ void SID_PCM_Source::renderSID()
 		return;
 	}
 	StringArray args;
+#ifdef USE_SID2WAV
 	String exename = String(CharPointer_UTF8(GetResourcePath())) + "/UserPlugins/SID2WAV.EXE";
 	args.add(exename);
 	args.add("-t" + String(m_sidlen));
@@ -319,9 +327,35 @@ void SID_PCM_Source::renderSID()
 	}
 	args.add(m_sidfn);
 	args.add(outfn);
+#else
+	String exename = String(CharPointer_UTF8(GetResourcePath())) + "/UserPlugins/sidplayfp.exe";
+	args.add(exename);
+	args.add("-t" + String((int)m_sidlen));
+	//args.add("-16");
+	args.add("-f" + String(m_sid_sr));
+	if (m_sid_track > 0)
+		args.add("-o" + String(m_sid_track));
+	if (m_sid_channelmode > 0)
+	{
+		String chanarg("-m");
+		for (int i = 1; i < 5; ++i)
+			if (i != m_sid_channelmode)
+				chanarg.append(String(i), 1);
+		args.add(chanarg);
+	}
+	args.add("-w"+outfn);
+	args.add(m_sidfn);
+#endif
 	m_sidoutfn = outfn;
 	m_childproc.start(args);
-	startTimer(1, 100);
+	m_percent_ready = 0.0;
+	m_progbar.addToDesktop(0, 0);
+	m_progbar.setVisible(true);
+	m_progbar.setBounds(10, 60, 500, 25);
+	m_progbar.setAlwaysOnTop(true);
+	m_progbar.setColour(ProgressBar::foregroundColourId, Colours::white);
+	m_progbar.setColour(ProgressBar::backgroundColourId, Colours::lightgrey);
+	startTimer(1, 1000);
 }
 
 /*
