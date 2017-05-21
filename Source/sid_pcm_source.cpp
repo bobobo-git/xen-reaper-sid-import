@@ -177,9 +177,12 @@ int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 	aw.getComboBoxComponent("rendermode")->setSelectedId(m_sid_render_mode + 1);
 	aw.addTextEditor("sr", String(m_sid_sr), "Samplerate");
 	aw.addTextEditor("tracklen", String(m_sidlen, 1), "Length to use");
+	aw.addButton("Cancel", 3);
 	aw.addButton("OK and use as defaults", 2);
 	aw.addButton("OK", 1);
+	
 	aw.setSize(aw.getWidth() + 200, aw.getHeight());
+	aw.setTopLeftPosition(aw.getX() - 100, aw.getY());
 	int r = aw.runModalLoop();
 	if (r == 1 || r == 2)
 	{
