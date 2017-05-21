@@ -2,6 +2,8 @@
 #include "lineparse.h"
 #include <array>
 
+int g_render_tasks = 0;
+
 SID_PCM_Source::SID_PCM_Source() : m_progbar(m_percent_ready)
 {
 	if (HasExtState("sid_import", "default_len"))
@@ -27,6 +29,9 @@ void SID_PCM_Source::timerCallback(int id)
 		if (m_childproc.isRunning() == false)
 		{
 			m_progbar.removeFromDesktop();
+			--g_render_tasks;
+			if (g_render_tasks < 0)
+				g_render_tasks = 0;
 			stopTimer(1);
 			if (m_childproc.getExitCode() == 0)
 			{
@@ -351,10 +356,12 @@ void SID_PCM_Source::renderSID()
 	m_percent_ready = 0.0;
 	m_progbar.addToDesktop(0, 0);
 	m_progbar.setVisible(true);
-	m_progbar.setBounds(10, 60, 500, 25);
+	m_progbar.setBounds(10, 60+30*g_render_tasks, 500, 25);
 	m_progbar.setAlwaysOnTop(true);
 	m_progbar.setColour(ProgressBar::foregroundColourId, Colours::white);
 	m_progbar.setColour(ProgressBar::backgroundColourId, Colours::lightgrey);
+	//m_progbar.setTextToDisplay("Rendering SID...");
+	++g_render_tasks;
 	startTimer(1, 1000);
 }
 
