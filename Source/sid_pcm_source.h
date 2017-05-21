@@ -85,5 +85,7 @@ private:
 	MediaItem* m_item = nullptr;
 	double m_percent_ready = 0.0;
 	ProgressBar m_progbar;
+	double m_render_start_time = 0.0;
+	double m_render_elapsed_time = 0.0;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SID_PCM_Source)
 };

@@ -53,6 +53,7 @@ void SID_PCM_Source::timerCallback(int id)
 			stopTimer(1);
 			if (m_childproc.getExitCode() == 0)
 			{
+				m_render_elapsed_time = Time::getMillisecondCounterHiRes() - m_render_start_time;
 				PCM_source* src = PCM_Source_CreateFromFile(m_sidoutfn.toRawUTF8());
 				if (src != nullptr)
 				{
@@ -177,6 +178,7 @@ int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 	aw.getComboBoxComponent("rendermode")->setSelectedId(m_sid_render_mode + 1);
 	aw.addTextEditor("sr", String(m_sid_sr), "Samplerate");
 	aw.addTextEditor("tracklen", String(m_sidlen, 1), "Length to use");
+	aw.addTextEditor("elapsedtime", String(m_render_elapsed_time / 1000.0,1) + " seconds", "Rendering took");
 	aw.addButton("Cancel", 3);
 	aw.addButton("OK and use as defaults", 2);
 	aw.addButton("OK", 1);
@@ -401,6 +403,7 @@ void SID_PCM_Source::renderSID()
 	m_progbar.setColour(ProgressBar::backgroundColourId, Colours::lightgrey);
 	//m_progbar.setTextToDisplay("Rendering SID...");
 	++g_render_tasks;
+	m_render_start_time = Time::getMillisecondCounterHiRes();
 	startTimer(1, 1000);
 }
 
