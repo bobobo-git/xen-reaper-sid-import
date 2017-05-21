@@ -14,7 +14,25 @@ SID_PCM_Source::SID_PCM_Source() : m_progbar(m_percent_ready)
 
 SID_PCM_Source::~SID_PCM_Source()
 {
-	
+	if (m_childproc.isRunning() == true)
+	{
+		stopTimer(1);
+		//ShowConsoleMsg("SID_PCM_Source destroyed while rendering\n");
+		if (m_childproc.kill() == true)
+		{
+			//ShowConsoleMsg("Child process killed\n");
+			File temp(m_sidoutfn);
+			if (temp.deleteFile() == false)
+			{
+				ShowConsoleMsg("Could not delete file!\n");
+			}
+			else
+			{
+				//ShowConsoleMsg("File deleted\n");
+			}
+		}
+		else ShowConsoleMsg("Could not kill rendering process!\n");
+	}
 }
 
 void SID_PCM_Source::timerCallback(int id)
