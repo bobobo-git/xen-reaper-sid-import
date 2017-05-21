@@ -81,6 +81,7 @@ private:
 	int m_sid_track = 0;
 	int m_sid_channelmode = 0;
 	int m_sid_sr = 44100;
+	int m_sid_render_mode = 1;
 	MediaItem* m_item = nullptr;
 	double m_percent_ready = 0.0;
 	ProgressBar m_progbar;

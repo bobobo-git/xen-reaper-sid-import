@@ -89,6 +89,7 @@ PCM_source * SID_PCM_Source::Duplicate()
 	dupl->m_sid_track = m_sid_track;
 	dupl->m_sid_channelmode = m_sid_channelmode;
 	dupl->m_sid_sr = m_sid_sr;
+	dupl->m_sid_render_mode = m_sid_render_mode;
 	dupl->renderSID();
 	return dupl;
 }
@@ -167,6 +168,11 @@ int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 		aw.getComboBoxComponent("channelmode")->setSelectedId(2);
 	if (m_sid_channelmode >= 1 && m_sid_channelmode < 5)
 		aw.getComboBoxComponent("channelmode")->setSelectedId(m_sid_channelmode + 2);
+	items.clear();
+	items.add("Slow render");
+	items.add("Faster render");
+	aw.addComboBox("rendermode", items, "Render mode");
+	aw.getComboBoxComponent("rendermode")->setSelectedId(m_sid_render_mode + 1);
 	aw.addTextEditor("sr", String(m_sid_sr), "Samplerate");
 	aw.addTextEditor("tracklen", String(m_sidlen, 1), "Length to use");
 	aw.addButton("OK and use as defaults", 2);
@@ -185,6 +191,7 @@ int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 		if (chanmode >=3 && chanmode<=6)
 			m_sid_channelmode = chanmode - 2;
 		m_sid_sr = jlimit(8000, 384000, aw.getTextEditorContents("sr").getIntValue());
+		m_sid_render_mode = jlimit(0, 1, aw.getComboBoxComponent("rendermode")->getSelectedId() - 1);
 		if (r == 2)
 		{
 			char tempbuf[100];
@@ -215,7 +222,7 @@ void SID_PCM_Source::GetPeakInfo(PCM_source_peaktransfer_t * block)
 
 void SID_PCM_Source::SaveState(ProjectStateContext * ctx)
 {
-	ctx->AddLine("FILE \"%s\" %f %d %d %d", m_sidfn.toRawUTF8(),m_sidlen,m_sid_track, m_sid_channelmode,m_sid_sr);
+	ctx->AddLine("FILE \"%s\" %f %d %d %d %d", m_sidfn.toRawUTF8(),m_sidlen,m_sid_track, m_sid_channelmode,m_sid_sr,m_sid_render_mode);
 }
 
 int SID_PCM_Source::LoadState(const char * firstline, ProjectStateContext * ctx)
@@ -234,6 +241,7 @@ int SID_PCM_Source::LoadState(const char * firstline, ProjectStateContext * ctx)
 			m_sid_track = lp.gettoken_int(3);
 			m_sid_channelmode = lp.gettoken_int(4);
 			m_sid_sr = lp.gettoken_int(5);
+			m_sid_render_mode = lp.gettoken_int(6);
 		}
 		if (lp.gettoken_str(0)[0] == '>')
 		{
@@ -295,6 +303,7 @@ MD5 SID_PCM_Source::getStateHash()
 	mb.append(&m_sid_channelmode, sizeof(int));
 	mb.append(&m_sid_track, sizeof(int));
 	mb.append(&m_sid_sr, sizeof(int));
+	mb.append(&m_sid_render_mode, sizeof(int));
 	return MD5(mb);
 }
 
@@ -367,6 +376,12 @@ void SID_PCM_Source::renderSID()
 		args.add(chanarg);
 	}
 	args.add("-w"+outfn);
+	args.add("-q"); // text output not needed
+	if (m_sid_render_mode == 1)
+	{
+		args.add("--resid");
+		args.add("-rif"); // fast resid resample
+	}
 	args.add(m_sidfn);
 #endif
 	m_sidoutfn = outfn;
