@@ -169,7 +169,7 @@ bool on_value_action(KbdSectionInfo *sec, int command, int val, int valhw, int r
 	}
 	return false; // failed to run relevant action
 }
-#ifdef WIN32
+//#ifdef WIN32
 PCM_source *CreateFromType(const char *type, int priority)
 {
 	Window::initMessageManager(); // SetFileName needs timer
@@ -203,7 +203,7 @@ const char *EnumFileExtensions(int i, const char **descptr) // call increasing i
 }
 
 pcmsrc_register_t myRegStruct = { CreateFromType,CreateFromFile,EnumFileExtensions };
-#endif
+//#endif
 extern "C"
 {
 	REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(REAPER_PLUGIN_HINSTANCE hInstance, reaper_plugin_info_t *rec) {
@@ -219,9 +219,9 @@ extern "C"
 
 			rec->Register("hookcommand2", (void*)on_value_action);
 			rec->Register("toggleaction", (void*)toggleActionCallback);
-#ifdef WIN32
+//#ifdef WIN32
             rec->Register("pcmsrc", &myRegStruct);
-#endif
+//#endif
 			return 1; // our plugin registered, return success
 		}
 		else

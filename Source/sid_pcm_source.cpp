@@ -368,8 +368,13 @@ void SID_PCM_Source::renderSID()
 	args.add(m_sidfn);
 	args.add(outfn);
 #else
-	String exename = String(CharPointer_UTF8(GetResourcePath())) + "/UserPlugins/sidplayfp.exe";
-	args.add(exename);
+#ifdef WIN32
+    String exename = String(CharPointer_UTF8(GetResourcePath())) + "/UserPlugins/sidplayfp.exe";
+#else
+    String exename = String(CharPointer_UTF8(GetResourcePath())) + "/UserPlugins/sidplayfp";
+#endif
+	
+    args.add(exename);
 	args.add("-t" + String((int)m_sidlen));
 	//args.add("-16");
 	args.add("-f" + String(m_sid_sr));
