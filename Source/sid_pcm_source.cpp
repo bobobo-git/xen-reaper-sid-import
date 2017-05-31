@@ -2,6 +2,51 @@
 #include "lineparse.h"
 #include <array>
 
+class SIDPropertiesComponent : public Component, public Button::Listener
+{
+public:
+	SIDPropertiesComponent(SID_PCM_Source* src) : m_src(src)
+	{
+		addAndMakeVisible(&m_ok_button);
+		m_ok_button.setButtonText("OK");
+		m_ok_button.addListener(this);
+		addAndMakeVisible(&m_cancel_button);
+		m_cancel_button.setButtonText("Cancel");
+		m_cancel_button.addListener(this);
+		addAndMakeVisible(&m_defaults_button);
+		m_defaults_button.setButtonText("Set as defaults");
+		m_defaults_button.addListener(this);
+		addAndMakeVisible(&m_sid_file_label);
+		m_sid_file_label.setText(src->m_sidfn, dontSendNotification);
+		setSize(500, 400);
+	}
+	void buttonClicked(Button* but) override
+	{
+		DialogWindow* dw = findParentComponentOfClass<DialogWindow>();
+		if (dw == nullptr)
+			return;
+		if (but == &m_ok_button)
+			dw->exitModalState(1);
+		if (but == &m_cancel_button)
+			dw->exitModalState(2);
+		//if (but == &m_defaults_button)
+		//	ShowConsoleMsg("Storing defaults\n");
+	}
+	void resized() override
+	{
+		m_sid_file_label.setBounds(1, 1, getWidth() - 2, 25);
+		m_defaults_button.setBounds(1, getHeight() - 25, 100, 24);
+		m_cancel_button.setBounds(m_defaults_button.getRight() + 2, getHeight() - 25, 100, 24);
+		m_ok_button.setBounds(m_cancel_button.getRight() + 2, getHeight() - 25, 40, 24);
+	}
+private:
+	SID_PCM_Source* m_src = nullptr;
+	TextButton m_ok_button;
+	TextButton m_cancel_button;
+	TextButton m_defaults_button;
+	Label m_sid_file_label;
+};
+
 int g_render_tasks = 0;
 
 SID_PCM_Source::SID_PCM_Source() : m_progbar(m_percent_ready)
@@ -149,8 +194,13 @@ double SID_PCM_Source::GetLength()
 
 int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 {
-	juce::AlertWindow aw("SID source properties",m_sidfn,AlertWindow::InfoIcon);
 	LookAndFeel_V3 lookandfeel;
+	SIDPropertiesComponent sidcomponent(this);
+	sidcomponent.setLookAndFeel(&lookandfeel);
+	int resultti = DialogWindow::showModalDialog("SID properties", &sidcomponent, nullptr, Colours::lightgrey, true);
+	return 0;
+	juce::AlertWindow aw("SID source properties",m_sidfn,AlertWindow::InfoIcon);
+	
 	aw.setLookAndFeel(&lookandfeel);
 	StringArray items;
 	items.add("Default track");

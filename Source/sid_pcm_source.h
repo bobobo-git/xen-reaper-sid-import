@@ -64,7 +64,7 @@ public:
 	void PeaksBuild_Finish() override;
 
 	int Extended(int call, void *parm1, void *parm2, void *parm3) override;
-
+	friend class SIDPropertiesComponent;
 private:
 	MD5 getStateHash();
 	void renderSID();
