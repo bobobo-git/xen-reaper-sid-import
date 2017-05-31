@@ -383,7 +383,7 @@ int SID_PCM_Source::Extended(int call, void * parm1, void * parm2, void * parm3)
 	return 0;
 }
 
-MD5 SID_PCM_Source::getStateHash()
+SHA256 SID_PCM_Source::getStateHash()
 {
 	MemoryBlock mb;
 	mb.append(m_sidfn.toRawUTF8(), m_sidfn.getNumBytesAsUTF8());
@@ -392,7 +392,7 @@ MD5 SID_PCM_Source::getStateHash()
 	mb.append(&m_sid_track, sizeof(int));
 	mb.append(&m_sid_sr, sizeof(int));
 	mb.append(&m_sid_render_mode, sizeof(int));
-	return MD5(mb);
+	return SHA256(mb);
 }
 
 void SID_PCM_Source::renderSID()
