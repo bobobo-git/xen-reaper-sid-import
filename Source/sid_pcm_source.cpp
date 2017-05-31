@@ -28,7 +28,8 @@ public:
 		addAndMakeVisible(&m_length_label);
 		m_length_label.setText("Length", dontSendNotification);
 		addAndMakeVisible(&m_length_edit);
-		m_length_edit.setText(String(m_src->m_sidlen, 1), dontSendNotification);
+		m_length_edit.setText(String(m_src->m_sidlen, 1));
+		m_length_edit.setColour(TextEditor::textColourId, Colours::black);
 		setSize(500, 400);
 	}
 	void buttonClicked(Button* but) override
@@ -56,10 +57,10 @@ public:
 		m_sid_file_label.setBounds(1, yoffs, getWidth() - 2, 24);
 		yoffs += 25;
 		m_track_combo_label.setBounds(1, yoffs, labw, 24);
-		m_track_combo.setBounds(m_track_combo_label.getRight() + 1, yoffs, 70, 24);
+		m_track_combo.setBounds(m_track_combo_label.getRight() + 1, yoffs, 100, 24);
 		yoffs += 25;
 		m_length_label.setBounds(1, yoffs, labw, 24);
-		m_length_edit.setBounds(m_track_combo_label.getRight() + 1, yoffs, 70, 24);
+		m_length_edit.setBounds(m_track_combo_label.getRight() + 1, yoffs, 100, 24);
 		m_defaults_button.setBounds(1, getHeight() - 25, 100, 24);
 		m_cancel_button.setBounds(m_defaults_button.getRight() + 2, getHeight() - 25, 100, 24);
 		m_ok_button.setBounds(m_cancel_button.getRight() + 2, getHeight() - 25, 40, 24);
@@ -224,9 +225,9 @@ double SID_PCM_Source::GetLength()
 int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 {
 	LookAndFeel_V3 lookandfeel;
-	SIDPropertiesComponent sidcomponent(this);
-	sidcomponent.setLookAndFeel(&lookandfeel);
-	int resultti = DialogWindow::showModalDialog("SID properties", &sidcomponent, nullptr, Colours::lightgrey, true);
+	auto sidcomponent = std::make_unique<SIDPropertiesComponent>(this);
+	sidcomponent->setLookAndFeel(&lookandfeel);
+	int resultti = DialogWindow::showModalDialog("SID properties", sidcomponent.get(), nullptr, Colours::lightgrey, true);
 	return 0;
 	juce::AlertWindow aw("SID source properties",m_sidfn,AlertWindow::InfoIcon);
 	
