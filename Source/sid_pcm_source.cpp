@@ -18,6 +18,17 @@ public:
 		m_defaults_button.addListener(this);
 		addAndMakeVisible(&m_sid_file_label);
 		m_sid_file_label.setText(src->m_sidfn, dontSendNotification);
+		addAndMakeVisible(&m_track_combo_label);
+		m_track_combo_label.setText("Track",dontSendNotification);
+		addAndMakeVisible(&m_track_combo);
+		m_track_combo.addItem("Default", 1);
+		for (int i = 0; i < 20; ++i)
+			m_track_combo.addItem(String(i + 1), i + 2);
+		m_track_combo.setSelectedId(m_src->m_sid_track+1, dontSendNotification);
+		addAndMakeVisible(&m_length_label);
+		m_length_label.setText("Length", dontSendNotification);
+		addAndMakeVisible(&m_length_edit);
+		m_length_edit.setText(String(m_src->m_sidlen, 1), dontSendNotification);
 		setSize(500, 400);
 	}
 	void buttonClicked(Button* but) override
@@ -26,7 +37,13 @@ public:
 		if (dw == nullptr)
 			return;
 		if (but == &m_ok_button)
+		{
+			m_src->m_sid_track = m_track_combo.getSelectedId() - 1;
+			double len = m_length_edit.getText().getDoubleValue();
+			m_src->m_sidlen = jlimit(5.0, 1200.0, len);
 			dw->exitModalState(1);
+			m_src->renderSID();
+		}
 		if (but == &m_cancel_button)
 			dw->exitModalState(2);
 		//if (but == &m_defaults_button)
@@ -34,7 +51,15 @@ public:
 	}
 	void resized() override
 	{
-		m_sid_file_label.setBounds(1, 1, getWidth() - 2, 25);
+		int labw = 100;
+		int yoffs = 1;
+		m_sid_file_label.setBounds(1, yoffs, getWidth() - 2, 24);
+		yoffs += 25;
+		m_track_combo_label.setBounds(1, yoffs, labw, 24);
+		m_track_combo.setBounds(m_track_combo_label.getRight() + 1, yoffs, 70, 24);
+		yoffs += 25;
+		m_length_label.setBounds(1, yoffs, labw, 24);
+		m_length_edit.setBounds(m_track_combo_label.getRight() + 1, yoffs, 70, 24);
 		m_defaults_button.setBounds(1, getHeight() - 25, 100, 24);
 		m_cancel_button.setBounds(m_defaults_button.getRight() + 2, getHeight() - 25, 100, 24);
 		m_ok_button.setBounds(m_cancel_button.getRight() + 2, getHeight() - 25, 40, 24);
@@ -45,6 +70,10 @@ private:
 	TextButton m_cancel_button;
 	TextButton m_defaults_button;
 	Label m_sid_file_label;
+	Label m_track_combo_label;
+	ComboBox m_track_combo;
+	Label m_length_label;
+	TextEditor m_length_edit;
 };
 
 int g_render_tasks = 0;
