@@ -159,7 +159,6 @@ bool on_value_action(KbdSectionInfo *sec, int command, int val, int valhw, int r
 	for (auto& e : g_actions)
 	{
 		if (e->m_command_id != 0 && e->m_command_id == command) {
-			Window::initMessageManager();
 			e->m_val = val;
 			e->m_valhw = valhw;
 			e->m_relmode = relmode;
@@ -183,7 +182,6 @@ PCM_source *CreateFromFile(const char *filename, int priority)
 	String temp = String(CharPointer_UTF8(filename));
 	if (priority > 4 && temp.endsWithIgnoreCase("sid"))
 	{
-		Window::initMessageManager(); // SetFileName needs timer
 		SID_PCM_Source* src = new SID_PCM_Source;
 		src->SetFileName(filename);
 		return src;
@@ -216,7 +214,7 @@ extern "C"
 			g_plugin_info = rec;
 			g_parent = rec->hwnd_main;
 			if (REAPERAPI_LoadAPI(rec->GetFunc) > 0) return 0;
-
+            Window::initMessageManager();
 			rec->Register("hookcommand2", (void*)on_value_action);
 			rec->Register("toggleaction", (void*)toggleActionCallback);
 
