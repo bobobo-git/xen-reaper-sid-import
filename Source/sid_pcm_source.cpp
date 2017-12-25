@@ -1,6 +1,7 @@
 #include "sid_pcm_source.h"
 #include "lineparse.h"
 #include <array>
+#include <type_traits>
 
 class SIDPropertiesComponent : public Component, public Button::Listener
 {
@@ -313,6 +314,28 @@ void SID_PCM_Source::SaveState(ProjectStateContext * ctx)
 	ctx->AddLine("FILE \"%s\" %f %d %d %d %d", m_sidfn.toRawUTF8(),m_sidlen,m_sid_track, m_sid_channelmode,m_sid_sr,m_sid_render_mode);
 }
 
+template<typename T>
+inline void setFromToken(LineParser& lp, int index, T& value)
+{
+	if constexpr (std::is_same<int, T>::value)
+		value = lp.gettoken_int(index);
+	else if constexpr (std::is_same<double, T>::value)
+		value = lp.gettoken_float(index);
+	else if constexpr (std::is_same<float, T>::value)
+		value = static_cast<float>(lp.gettoken_float(index));
+	else if constexpr (std::is_same<String, T>::value)
+		value = String(CharPointer_UTF8(lp.gettoken_str(index)));
+	else
+		static_assert(false, "Type not supported by LineParser");
+}
+
+template<typename... Args>
+inline void setFromTokens(LineParser& lp, Args&&... args)
+{
+	int index = 0;
+	(setFromToken(lp, ++index, args), ...);
+}
+
 int SID_PCM_Source::LoadState(const char * firstline, ProjectStateContext * ctx)
 {
 	LineParser lp;
@@ -324,12 +347,7 @@ int SID_PCM_Source::LoadState(const char * firstline, ProjectStateContext * ctx)
 		lp.parse(buf);
 		if (strcmp(lp.gettoken_str(0), "FILE") == 0)
 		{
-			m_sidfn = String(CharPointer_UTF8(lp.gettoken_str(1)));
-			m_sidlen = lp.gettoken_float(2);
-			m_sid_track = lp.gettoken_int(3);
-			m_sid_channelmode = lp.gettoken_int(4);
-			m_sid_sr = lp.gettoken_int(5);
-			m_sid_render_mode = lp.gettoken_int(6);
+			setFromTokens(lp, m_sidfn, m_sidlen, m_sid_track, m_sid_channelmode, m_sid_sr, m_sid_render_mode);
 		}
 		if (lp.gettoken_str(0)[0] == '>')
 		{

@@ -2,8 +2,8 @@
 
 <JUCERPROJECT id="VD0inS" name="reaper_sid_import" projectType="dll" version="1.0.0"
               bundleIdentifier="com.yourcompany.reaper_sid_import" includeBinaryInAppConfig="1"
-              jucerVersion="5.0.1" displaySplashScreen="0" reportAppUsage="1"
-              splashScreenColour="Dark">
+              jucerVersion="5.2.0" displaySplashScreen="0" reportAppUsage="0"
+              splashScreenColour="Dark" cppLanguageStandard="latest" companyCopyright="">
   <MAINGROUP id="i8mxfq" name="reaper_sid_import">
     <GROUP id="{41C2F99A-5C1F-83B3-E43F-10FEA7414113}" name="Source">
       <FILE id="edcIBx" name="main.cpp" compile="1" resource="0" file="Source/main.cpp"/>
@@ -16,10 +16,10 @@
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="reaper_sid_import"
                        osxSDK="default" osxCompatibility="10.11 SDK" osxArchitecture="64BitIntel"
-                       cppLanguageStandard="c++14" cppLibType="libc++"/>
+                       cppLanguageStandard="c++14" cppLibType="libc++" enablePluginBinaryCopyStep="1"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="reaper_sid_import"
                        osxSDK="default" osxCompatibility="10.11 SDK" osxArchitecture="64BitIntel"
-                       cppLanguageStandard="c++14" cppLibType="libc++"/>
+                       cppLanguageStandard="c++14" cppLibType="libc++" enablePluginBinaryCopyStep="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../JUCE/modules"/>
@@ -39,10 +39,12 @@
     <VS2017 targetFolder="Builds/VisualStudio2017">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" winWarningLevel="4" generateManifest="1" winArchitecture="x64"
-                       isDebug="1" optimisation="1" targetName="reaper_sid_import" defines="JUCE_REMOVE_COMPONENT_FROM_DESKTOP_ON_WM_DESTROY&#10;"/>
+                       isDebug="1" optimisation="1" targetName="reaper_sid_import" defines="JUCE_REMOVE_COMPONENT_FROM_DESKTOP_ON_WM_DESTROY&#10;"
+                       debugInformationFormat="ProgramDatabase" enablePluginBinaryCopyStep="0"/>
         <CONFIGURATION name="Release" winWarningLevel="4" generateManifest="1" winArchitecture="x64"
                        isDebug="0" optimisation="3" targetName="reaper_sid_import" defines="JUCE_REMOVE_COMPONENT_FROM_DESKTOP_ON_WM_DESTROY&#10;"
-                       wholeProgramOptimisation="1" useRuntimeLibDLL="0"/>
+                       wholeProgramOptimisation="1" useRuntimeLibDLL="0" debugInformationFormat="ProgramDatabase"
+                       enablePluginBinaryCopyStep="0" linkTimeOptimisation="0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../../../gitrepos/JUCE/modules"/>
