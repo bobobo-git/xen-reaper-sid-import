@@ -5,8 +5,10 @@
 #include <vector>
 #include <functional>
 #include <string>
+#include <set>
 #include "JuceHeader.h"
 #include "sid_pcm_source.h"
+#include "Commctrl.h"
 
 HINSTANCE g_hInst;
 HWND g_parent;
@@ -14,6 +16,54 @@ HWND g_parent;
 reaper_plugin_info_t* g_plugin_info;
 
 enum toggle_state { CannotToggle, ToggleOff, ToggleOn };
+
+class MySurface : public IReaperControlSurface
+{
+public:
+	const char *GetTypeString() override { return "XENSURFACE"; }
+	const char *GetDescString() override { return "Xenakios Control Surface"; }
+	const char *GetConfigString() override { return "JUUH"; }
+
+};
+
+IReaperControlSurface *createSurface(const char *type_string, const char *configString, int *errStats)
+{
+	return new MySurface;
+}
+
+class SurfaceConfComponent : public Component
+{
+public:
+	SurfaceConfComponent()
+	{
+
+	}
+	void paint(Graphics& g) override
+	{
+		g.fillAll(Colours::black);
+		g.setColour(Colours::white);
+		g.drawText("foo!!!", 0, 0, getWidth(), getHeight(), Justification::centred);
+	}
+private:
+
+};
+
+HWND showSurfaceConfig(const char *type_string, HWND parent, const char *initConfigString)
+{
+	SurfaceConfComponent* comp = new SurfaceConfComponent;
+	comp->setSize(100, 100);
+	comp->addToDesktop(ComponentPeer::windowIsResizable, (void*)parent);
+	
+	return (HWND)comp->getPeer();
+}
+
+reaper_csurf_reg_t g_surfreg
+{ 
+	"XENSURFACE",
+	"Xenakios Control Surface",
+	createSurface,
+	showSurfaceConfig 
+};
 
 class action_entry
 { //class for registering actions
@@ -202,6 +252,167 @@ const char *EnumFileExtensions(int i, const char **descptr) // call increasing i
 
 pcmsrc_register_t myRegStruct = { CreateFromType,CreateFromFile,EnumFileExtensions };
 
+
+void* AM_GetHWNDFromTitle(char* Title)
+{
+	HWND hwndFound = FindWindowEx(g_parent, NULL, NULL, Title);
+	return (void*)hwndFound;
+}
+
+void* rprfunc_AM_GetHWNDFromTitle(void** args, int numargs)
+{
+	if (numargs > 0)
+		return AM_GetHWNDFromTitle((char*)args[0]);
+	return nullptr;
+}
+
+inline int intfromvoidptr(void* ptr)
+{
+	return (int)(int64_t)ptr;
+}
+
+inline double floatfromvoidptr(void* ptr)
+{
+	if (ptr == nullptr)
+		return 0.0;
+	return *(double*)ptr;
+}
+
+void* AM_GetSelectedFXidInChain(char* inbuf, int insz)
+{
+	int focus, trIdx, itemIdx, fxIdx;
+	focus = GetFocusedFX(&trIdx, &itemIdx, &fxIdx);
+	// If Track FX Chain has the focus
+	if (focus == 1)
+	{
+		// Find the HWND of the FX Chain list
+		char strbuf[64];
+		sprintf_s(strbuf, sizeof(strbuf), "FX: Track %d", trIdx);
+		HWND hwndFound = FindWindowEx(NULL, NULL, NULL, strbuf);
+		HWND hWnd = FindWindowEx(hwndFound, NULL, NULL, "List1");
+		// Find number of FX present in the Chain
+		int result = ListView_GetItemCount(hWnd);
+		if (result > 0)
+		{
+			// Store selected FX IDs in an string
+			std::string output;
+
+			for (int i = 0; i < result; i = i + 1) {
+				UINT retState = ListView_GetItemState(hWnd, i, LVIS_SELECTED);
+				if (retState == LVIS_SELECTED)
+				{
+					if (output.length() < 1)
+					{
+						sprintf_s(strbuf, sizeof(strbuf), "%d", i);
+						output.append(strbuf);
+					}
+					else
+					{
+						sprintf_s(strbuf, sizeof(strbuf), "%d", i);
+						output.append(",");
+						output.append(strbuf);
+					}
+				}
+			}
+			strcpy(inbuf, output.c_str());
+		}
+	}
+	return nullptr;
+}
+
+void* reascript_AM_GetSelectedFXidInChain(void** args, int numargs)
+{
+	if (numargs>1)
+		return (void*)AM_GetSelectedFXidInChain((char*)args[0],intfromvoidptr(args[1]));
+	return nullptr;
+}
+
+class AudioProcessorKeyFrame
+{
+public:
+	AudioProcessorKeyFrame() {}
+	AudioProcessorKeyFrame(double tpos, double pitch, double formant, double playrate)
+		: m_tpos(tpos), m_pitch(pitch), m_formant(formant), m_playrate(playrate) {}
+	double m_tpos = 0.0;
+	double m_pitch = 0.0;
+	double m_formant = 0.0;
+	double m_playrate = 1.0;
+};
+class XenAudioProcessor;
+
+std::set<XenAudioProcessor*> g_activeprocessors;
+
+class XenAudioProcessor
+{
+public:
+	XenAudioProcessor(MediaItem_Take* sourcetake) : m_take(sourcetake)
+	{
+		ShowConsoleMsg("XenAudioProcessor created\n");
+		g_activeprocessors.insert(this);
+	}
+	~XenAudioProcessor()
+	{
+		ShowConsoleMsg("XenAudioProcessor destroyed\n");
+		g_activeprocessors.erase(this);
+	}
+	void addKeyFrame(double tpos, double pitch, double formant, double playrate)
+	{
+		char buf[1024];
+		sprintf(buf, "Adding keyframe %f %f %f %f\n", tpos, pitch, formant, playrate);
+		ShowConsoleMsg(buf);
+		m_keyframes.emplace_back(tpos, pitch, formant, playrate);
+	}
+	bool render(char* filename)
+	{
+		char buf[2048];
+		sprintf(buf, "Rendering to file %s\n", filename);
+		ShowConsoleMsg(buf);
+		return true;
+	}
+private:
+	MediaItem_Take* m_take = nullptr;
+	std::vector<AudioProcessorKeyFrame> m_keyframes;
+};
+
+void *reascript_XenCreateAudioProcessor(void** args, int numargs)
+{
+	if (numargs>0)
+		return (void*)new XenAudioProcessor((MediaItem_Take*)args[0]);
+	return nullptr;
+}
+
+void *reascript_XenDestroyAudioProcessor(void** args, int numargs)
+{
+	if (numargs > 0)
+		delete (XenAudioProcessor*)args[0];
+	return nullptr;
+}
+
+void *reascript_XenAudioProcessorAddKeyFrame(void** args, int numargs)
+{
+	if (numargs > 4 && args[0] != nullptr)
+		((XenAudioProcessor*)args[0])->addKeyFrame(
+			floatfromvoidptr(args[1]),
+			floatfromvoidptr(args[2]),
+			floatfromvoidptr(args[3]),
+			floatfromvoidptr(args[4]));
+	return nullptr;
+}
+
+void *reascript_XenAudioProcessorRender(void** args, int numargs)
+{
+	bool result = false;
+	if (numargs > 1 && args[0] != nullptr && args[1] != nullptr)
+	{
+		result = ((XenAudioProcessor*)args[0])->render((char*)args[1]);
+	}
+	return (void*)result;
+}
+
+#define FOOBAR2
+
+#ifdef FOOBAR2
+
 extern "C"
 {
 	REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(REAPER_PLUGIN_HINSTANCE hInstance, reaper_plugin_info_t *rec) {
@@ -220,6 +431,28 @@ extern "C"
 
             rec->Register("pcmsrc", &myRegStruct);
 
+			rec->Register("API_AM_GetHWNDFromTitle", (void*)AM_GetHWNDFromTitle);
+			rec->Register("APIdef_AM_GetHWNDFromTitle", (void*)"void*\0char*\0oh yeah\0");
+			rec->Register("APIvararg_AM_GetHWNDFromTitle", (void*)rprfunc_AM_GetHWNDFromTitle);
+
+			rec->Register("APIdef_AM_GetSelectedFXidInChain", (void*)"void*\0char*,int\0buf,buf_sz\0");
+			rec->Register("APIvararg_AM_GetSelectedFXidInChain", (void*)reascript_AM_GetSelectedFXidInChain);
+
+			rec->Register("APIdef_Xen_AudioProcessorCreate", (void*)"XenAudioProcessor*\0MediaItem_Take*\0sourcetake\0");
+			rec->Register("APIvararg_Xen_AudioProcessorCreate", (void*)reascript_XenCreateAudioProcessor);
+
+			rec->Register("APIdef_Xen_AudioProcessorDestroy", (void*)"void\0XenAudioProcessor*\0processor\0");
+			rec->Register("APIvararg_Xen_AudioProcessorDestroy", (void*)reascript_XenDestroyAudioProcessor);
+
+			rec->Register("APIdef_Xen_AudioProcessorAddKeyFrame", 
+				(void*)"void\0XenAudioProcessor*,double,double,double,double\0processor,timepos,pitch,formant,playrate\0");
+			rec->Register("APIvararg_Xen_AudioProcessorAddKeyFrame", (void*)reascript_XenAudioProcessorAddKeyFrame);
+
+			rec->Register("APIdef_Xen_AudioProcessorRender", (void*)"bool\0XenAudioProcessor*,char*\0processor,outfilename\0");
+			rec->Register("APIvararg_Xen_AudioProcessorRender", (void*)reascript_XenAudioProcessorRender);
+
+			//rec->Register("csurf", (void*)&g_surfreg);
+
 			return 1; // our plugin registered, return success
 		}
 		else
@@ -233,3 +466,25 @@ extern "C"
 		}
 	}
 };
+#else
+#define IMPAPI(x) if (!errcnt && !((*(void **)&(x)) = (void *)rec->GetFunc(#x))) errcnt++;
+extern "C"
+{
+	REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(REAPER_PLUGIN_HINSTANCE hInstance, reaper_plugin_info_t *rec)
+	{
+		if (rec != nullptr)
+		{
+			int errcnt = 0;
+			IMPAPI(ShowConsoleMsg);
+			ShowConsoleMsg("Loading extension plugin\n");
+			return 1; // plugin succesfully loaded, return 0 here if could not initialize properly
+		}
+		else
+		{
+			// plugin is being unloaded when Reaper quits
+			ShowConsoleMsg("Unloading extension plugin\n"); // you will never get to see this message, though...
+			return 0;
+		}
+	}
+}
+#endif

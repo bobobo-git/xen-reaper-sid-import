@@ -30,7 +30,7 @@ public:
 		m_length_label.setText("Length", dontSendNotification);
 		addAndMakeVisible(&m_length_edit);
 		m_length_edit.setText(String(m_src->m_sidlen, 1));
-		m_length_edit.setColour(TextEditor::textColourId, Colours::black);
+		//m_length_edit.setColour(TextEditor::textColourId, Colours::black);
 		setSize(500, 400);
 	}
 	void buttonClicked(Button* but) override
@@ -227,7 +227,7 @@ int SID_PCM_Source::PropertiesWindow(HWND hwndParent)
 {
 	LookAndFeel_V3 lookandfeel;
 	auto sidcomponent = std::make_unique<SIDPropertiesComponent>(this);
-	sidcomponent->setLookAndFeel(&lookandfeel);
+	//sidcomponent->setLookAndFeel(&lookandfeel);
 	int resultti = DialogWindow::showModalDialog("SID properties", sidcomponent.get(), nullptr, Colours::lightgrey, true);
 	return 0;
 	juce::AlertWindow aw("SID source properties",m_sidfn,AlertWindow::InfoIcon);
