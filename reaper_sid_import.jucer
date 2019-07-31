@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="VD0inS" name="reaper_sid_import" projectType="dll" version="1.0.0"
               bundleIdentifier="com.yourcompany.reaper_sid_import" includeBinaryInAppConfig="1"
-              jucerVersion="5.3.2" displaySplashScreen="0" reportAppUsage="0"
+              jucerVersion="5.4.3" displaySplashScreen="0" reportAppUsage="0"
               splashScreenColour="Dark" cppLanguageStandard="latest" companyCopyright="">
   <MAINGROUP id="i8mxfq" name="reaper_sid_import">
     <GROUP id="{41C2F99A-5C1F-83B3-E43F-10FEA7414113}" name="Source">

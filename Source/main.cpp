@@ -252,20 +252,6 @@ const char *EnumFileExtensions(int i, const char **descptr) // call increasing i
 
 pcmsrc_register_t myRegStruct = { CreateFromType,CreateFromFile,EnumFileExtensions };
 
-
-void* AM_GetHWNDFromTitle(char* Title)
-{
-	HWND hwndFound = FindWindowEx(g_parent, NULL, NULL, Title);
-	return (void*)hwndFound;
-}
-
-void* rprfunc_AM_GetHWNDFromTitle(void** args, int numargs)
-{
-	if (numargs > 0)
-		return AM_GetHWNDFromTitle((char*)args[0]);
-	return nullptr;
-}
-
 inline int intfromvoidptr(void* ptr)
 {
 	return (int)(int64_t)ptr;
@@ -276,55 +262,6 @@ inline double floatfromvoidptr(void* ptr)
 	if (ptr == nullptr)
 		return 0.0;
 	return *(double*)ptr;
-}
-
-void* AM_GetSelectedFXidInChain(char* inbuf, int insz)
-{
-	int focus, trIdx, itemIdx, fxIdx;
-	focus = GetFocusedFX(&trIdx, &itemIdx, &fxIdx);
-	// If Track FX Chain has the focus
-	if (focus == 1)
-	{
-		// Find the HWND of the FX Chain list
-		char strbuf[64];
-		sprintf_s(strbuf, sizeof(strbuf), "FX: Track %d", trIdx);
-		HWND hwndFound = FindWindowEx(NULL, NULL, NULL, strbuf);
-		HWND hWnd = FindWindowEx(hwndFound, NULL, NULL, "List1");
-		// Find number of FX present in the Chain
-		int result = ListView_GetItemCount(hWnd);
-		if (result > 0)
-		{
-			// Store selected FX IDs in an string
-			std::string output;
-
-			for (int i = 0; i < result; i = i + 1) {
-				UINT retState = ListView_GetItemState(hWnd, i, LVIS_SELECTED);
-				if (retState == LVIS_SELECTED)
-				{
-					if (output.length() < 1)
-					{
-						sprintf_s(strbuf, sizeof(strbuf), "%d", i);
-						output.append(strbuf);
-					}
-					else
-					{
-						sprintf_s(strbuf, sizeof(strbuf), "%d", i);
-						output.append(",");
-						output.append(strbuf);
-					}
-				}
-			}
-			strcpy(inbuf, output.c_str());
-		}
-	}
-	return nullptr;
-}
-
-void* reascript_AM_GetSelectedFXidInChain(void** args, int numargs)
-{
-	if (numargs>1)
-		return (void*)AM_GetSelectedFXidInChain((char*)args[0],intfromvoidptr(args[1]));
-	return nullptr;
 }
 
 class AudioProcessorKeyFrame
@@ -430,13 +367,6 @@ extern "C"
 			rec->Register("toggleaction", (void*)toggleActionCallback);
 
             rec->Register("pcmsrc", &myRegStruct);
-
-			rec->Register("API_AM_GetHWNDFromTitle", (void*)AM_GetHWNDFromTitle);
-			rec->Register("APIdef_AM_GetHWNDFromTitle", (void*)"void*\0char*\0oh yeah\0");
-			rec->Register("APIvararg_AM_GetHWNDFromTitle", (void*)rprfunc_AM_GetHWNDFromTitle);
-
-			rec->Register("APIdef_AM_GetSelectedFXidInChain", (void*)"void*\0char*,int\0buf,buf_sz\0");
-			rec->Register("APIvararg_AM_GetSelectedFXidInChain", (void*)reascript_AM_GetSelectedFXidInChain);
 
 			rec->Register("APIdef_Xen_AudioProcessorCreate", (void*)"XenAudioProcessor*\0MediaItem_Take*\0sourcetake\0");
 			rec->Register("APIvararg_Xen_AudioProcessorCreate", (void*)reascript_XenCreateAudioProcessor);
